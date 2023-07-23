@@ -12,9 +12,8 @@ def create_table():
     cur.execute(f'''CREATE TABLE IF NOT EXISTS {table_name} (
                 news_source VARCHAR(20),
                 update_date VARCHAR(20),
-                news_title TEXT,
-                news_link TEXT,
-                CONSTRAINT unique_stock_data UNIQUE (update_date, news_title, news_link)
+                news_title TEXT PRIMARY KEY ,
+                news_link TEXT
                 )''')
 
     con.commit()
