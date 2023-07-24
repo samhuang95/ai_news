@@ -5,10 +5,8 @@ import sqlite3
 from datetime import datetime
 
 # ================================================
-def cnn_titles():
-    url = "https://edition.cnn.com/business/tech"
-
-    title_list = []
+def bbc_titles():
+    url = "https://www.bbc.com/news/technology"
 
     headers = {
         'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
@@ -16,24 +14,21 @@ def cnn_titles():
     res = requests.get(url, headers=headers)
     soup = BeautifulSoup(res.text, 'html.parser')
 
-    title_tag_list = soup.select('div.container__headline')
-    for title_tag in title_tag_list:
-        title_tag = title_tag.text
-
-        # 因為抓下來的標題頭尾有換行符號，所以排除
-        title_tag = title_tag[1:-1]
-        if title_tag not in title_list:
-            title_list.append(title_tag)
+    title_list = []
+    # 【由於每個版位的資訊太混亂，因此只針對有時間序的文章進行爬取】
+    latest_updates = soup.select("span.lx-stream-post__header-text")
+    for title_tag in latest_updates:
+        title = title_tag.text
+        if title not in title_list:
+            title_list.append(title)
         else:
             pass
 
     return title_list
 
 # ================================================
-def cnn_links():
-    url = "https://edition.cnn.com/business/tech"
-
-    link_list = []
+def bbc_links():
+    url = "https://www.bbc.com/news/technology"
 
     headers = {
         'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
@@ -41,11 +36,12 @@ def cnn_links():
     res = requests.get(url, headers=headers)
     soup = BeautifulSoup(res.text, 'html.parser')
 
-    link_tag_list = soup.select('a.container__link')
-    for link_tags in link_tag_list:
+    link_list = []
+
+    focus_article = soup.select("a.qa-heading-link")
+    for link_tags in focus_article:
         link_tag = link_tags.get("href")
-        link_tag = "https://edition.cnn.com" + link_tag
-        
+        link_tag = "https://www.bbc.com/" + link_tag
         if link_tag not in link_list:
             link_list.append(link_tag)
         else:
@@ -60,7 +56,7 @@ def merge_lists_to_df(title_list, link_list):
     formatted_date = today.strftime("%Y/%m/%d")
 
     data_dict = {
-        'news_source':"CNN",
+        'news_source':"BBC",
         'update_date':formatted_date,
         'news_title': title_list,
         'news_link': link_list
@@ -74,8 +70,8 @@ def merge_lists_to_df(title_list, link_list):
 def insert_data():
 
     # 每天的資料表
-    title_list = cnn_titles()
-    link_list = cnn_links()
+    title_list = bbc_titles()
+    link_list = bbc_links()
     merged_df = merge_lists_to_df(title_list, link_list)
     merged_df = merged_df.to_numpy().tolist()
 
@@ -87,7 +83,7 @@ def insert_data():
     # 使用 for 迴圈逐行判斷並插入資料
     for data in merged_df:
         # 取得要插入的 PK 值，PK 值在這個 list 的第三個位置(news_title)
-        pk_value = data[2]  
+        pk_value = data[2]
 
         # 確認資料庫中是否已存在相同 PK 值的資料
         existing_data_query = f'''SELECT * FROM news WHERE news_title = "{pk_value}"'''
@@ -112,9 +108,6 @@ if __name__ == "__main__":
 
     insert_data()
     print("update finish!")
-
-
-
 
 
 
