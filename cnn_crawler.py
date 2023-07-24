@@ -82,6 +82,9 @@ def insert_data():
 
     # 設定 SQLite3 資料庫連接
     db_file_path = "news.db"
+
+    # for crontab
+    db_file_path = "/mnt/d/Program_project/ai_news/news.db"
     conn = sqlite3.connect(db_file_path)
 
     # 使用 for 迴圈逐行判斷並插入資料
