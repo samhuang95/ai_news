@@ -53,7 +53,7 @@ def bbc_links():
 def merge_lists_to_df(title_list, link_list):
     # 將兩個列表轉換成字典
     today = datetime.today()
-    formatted_date = today.strftime("%Y/%m/%d")
+    formatted_date = today.strftime("%Y/%m/%d %H")
 
     data_dict = {
         'news_source':"BBC",
@@ -77,7 +77,9 @@ def insert_data():
 
 
     # 設定 SQLite3 資料庫連接
-    db_file_path = "news.db"
+    # db_file_path = "news.db"
+    # for crontab
+    db_file_path = "/mnt/d/Program_project/ai_news/news.db"
     conn = sqlite3.connect(db_file_path)
 
     # 使用 for 迴圈逐行判斷並插入資料
@@ -108,6 +110,3 @@ if __name__ == "__main__":
 
     insert_data()
     print("update finish!")
-
-
-

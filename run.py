@@ -8,7 +8,10 @@ import configparser
 
 from datetime import datetime
 today = datetime.today()
-formatted_date = today.strftime("%Y/%m/%d")
+formatted_date = today.strftime("%Y/%m/%d %H")
+curr_date = today.strftime("%Y/%m/%d")
+# formatted_date = "2023/07/24"
+
 
 app = Flask(__name__)
 
@@ -23,7 +26,7 @@ line_bot_api = LineBotApi(ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
 # 連接至 SQLite 資料庫
-conn = sqlite3.connect('news.db')
+conn = sqlite3.connect('news.db', check_same_thread=False)
 cursor = conn.cursor()
 
 # 設定選單
@@ -33,8 +36,10 @@ menu_template_message = TemplateSendMessage(
         title='功能選單',
         text='請選擇要查詢的項目',
         actions=[
-            MessageAction(label='查詢 A', text='A'),
-            MessageAction(label='查詢 B', text='B'),
+            MessageAction(label='每日 AI 新聞', text='每日 AI 新聞'),
+            MessageAction(label='每日產業新聞', text='每日產業新聞'),
+            MessageAction(label='每日新聞', text='每日新聞'),
+            MessageAction(label='最近更新', text='最近更新'),
             # 在這裡可以繼續增加其他選單項目
         ]
     )
@@ -69,7 +74,7 @@ def handle_message(event):
             event.reply_token,
             menu_template_message
         )
-    elif user_message in ('每日 AI 新聞', '每日產業新聞', '每日新聞'):
+    elif user_message in ('每日 AI 新聞', '每日產業新聞', '每日新聞', '最近更新'):
         result = query_database(user_message)
         line_bot_api.reply_message(
             event.reply_token,
@@ -87,22 +92,25 @@ def query_database(query_type):
         if query_type == '每日 AI 新聞':
             cursor.execute(f'''SELECT news_title, news_link FROM news 
                            WHERE 
-                           news_title LIKE '% AI %' OR 
-                           news_title LIKE '% Artificial %' AND
-                           update_date = {formatted_date}
+                           (news_title LIKE '% AI %' OR 
+                           news_title LIKE '% Artificial %') AND
+                           update_date = '{curr_date}%'
                            ''')
         elif query_type == '每日產業新聞':
             cursor.execute(f'''SELECT news_title, news_link FROM news 
-                           WHERE 
-                           news_title LIKE '% Apple %' OR 
-                           news_title LIKE '% virtual %' OR 
-                           news_title LIKE '% nvidia %' AND
-                           update_date = {formatted_date}
-                           ''')
+                            WHERE 
+                            (news_title LIKE '% Apple %' OR 
+                            news_title LIKE '% virtual %' OR 
+                            news_title LIKE '% nvidia %') AND
+                            update_date = '{curr_date}%'
+                            ''')
         elif query_type == '每日新聞':
             cursor.execute(f'''SELECT news_title, news_link FROM news 
-                           WHERE 
-                           update_date = {formatted_date}
+                           WHERE update_date = '{curr_date}%'
+                           ''')
+        elif query_type == '最近更新':
+            cursor.execute(f'''SELECT news_title, news_link FROM news 
+                           WHERE update_date = '{formatted_date}'
                            ''')
 
         # 取得查詢結果
@@ -111,10 +119,10 @@ def query_database(query_type):
         if len(results) == 0:
             return "查無資料。"
 
-        # 將查詢結果組合成回覆字串
-        response = "查詢結果：\n"
-        for row in results:
-            response += row[0] + "\n"
+        # 將查詢結果轉換成字串並傳送回 LINE
+        response = ''
+        for title, link in results:
+            response += f"{title}\n{link}\n\n"
 
         return response
 
@@ -122,4 +130,4 @@ def query_database(query_type):
         return "發生錯誤：{}".format(str(e))
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)   
