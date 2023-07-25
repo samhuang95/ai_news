@@ -6,11 +6,15 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage, ButtonsTemplate, MessageAction
 import configparser
+import os
 from run import query_database
 
-
 config = configparser.ConfigParser()
-config.read('config.ini')
+
+# 取得 config.ini 檔案的絕對路徑
+config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+config.read(config_file_path)
+
 ACCESS_TOKEN = config.get('linebot', 'ACCESS_TOKEN')
 CHANNEL_SECRET = config.get('linebot', 'CHANNEL_SECRET')
 
